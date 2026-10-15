@@ -1,0 +1,4 @@
+# Both ship prebuilt platform binaries as optional dependencies, so their postinstall scripts are not needed.
+allowBuilds:
+  esbuild: false
+  workerd: false
