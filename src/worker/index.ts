@@ -2,7 +2,7 @@ import { Hono, type Context } from 'hono';
 import { resolveLocale } from '../shared/i18n';
 import type { AppState, Image, PageName } from '../shared/types';
 import { api } from './api';
-import { countImages, getImageById, getRandomImage, listImageIds } from './db';
+import { findImage, listImages, pickRandom } from './db';
 import { renderPage } from './render';
 
 type AppContext = Context<{ Bindings: Env }>;
@@ -21,31 +21,30 @@ async function page(c: AppContext, name: PageName, image: Image | null = null, t
 }
 
 app.get('/', async (c) => {
-	const [image, total] = await Promise.all([getRandomImage(c.env.DB), countImages(c.env.DB)]);
+	const images = await listImages(c);
+	const image = pickRandom(images);
 	if (!image) {
-		return page(c, 'notFound', null, total, 404);
+		return page(c, 'notFound', null, images.length, 404);
 	}
-	return page(c, 'home', image, total);
+	return page(c, 'home', image, images.length);
 });
 
 app.get('/id/:id', async (c) => {
-	const [image, total] = await Promise.all([
-		getImageById(c.env.DB, c.req.param('id')),
-		countImages(c.env.DB),
-	]);
+	const images = await listImages(c);
+	const image = findImage(images, c.req.param('id'));
 	if (!image) {
-		return page(c, 'notFound', null, total, 404);
+		return page(c, 'notFound', null, images.length, 404);
 	}
-	return page(c, 'byId', image, total);
+	return page(c, 'byId', image, images.length);
 });
 
 app.get('/license', (c) => page(c, 'license'));
 app.get('/offline', (c) => page(c, 'offline'));
 
 app.get('/sitemap.xml', async (c) => {
-	const ids = await listImageIds(c.env.DB);
+	const images = await listImages(c);
 	const lastmod = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-	const entries = ids.map((id) => `<url><loc>https://rory.cat/id/${id}</loc><lastmod>${lastmod}</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>`);
+	const entries = images.map(({ id }) => `<url><loc>https://rory.cat/id/${id}</loc><lastmod>${lastmod}</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>`);
 	const xml = [
 		'<?xml version="1.0"?>',
 		'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',

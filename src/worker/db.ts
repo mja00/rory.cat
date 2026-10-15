@@ -1,32 +1,57 @@
+import type { Context } from 'hono';
 import type { Image } from '../shared/types';
 
-export function getRandomImage(db: D1Database): Promise<Image | null> {
-	return db.prepare('SELECT id, url FROM images ORDER BY RANDOM() LIMIT 1').first<Image>();
+type AppContext = Context<{ Bindings: Env }>;
+
+// Each D1 round trip costs ~55ms and the table is small, so every read shares one cached list per data center.
+const CACHE_TTL_SECONDS = 300;
+const CACHE_PATH = '/__cache/images-v1';
+
+// The shared tsconfig's DOM lib shadows the Workers CacheStorage type, which is the only one declaring `default`.
+function cache(): Cache {
+	return (caches as unknown as { default: Cache }).default;
 }
 
-export async function getImageById(db: D1Database, rawId: string): Promise<Image | null> {
+function cacheKey(c: AppContext): Request {
+	return new Request(new URL(CACHE_PATH, c.req.url));
+}
+
+export async function listImages(c: AppContext): Promise<Image[]> {
+	const key = cacheKey(c);
+	const cached = await cache().match(key);
+	if (cached) {
+		return cached.json<Image[]>();
+	}
+
+	const { results } = await c.env.DB.prepare('SELECT id, url FROM images ORDER BY id').all<Image>();
+	const response = Response.json(results, { headers: { 'Cache-Control': `max-age=${CACHE_TTL_SECONDS}` } });
+	c.executionCtx.waitUntil(cache().put(key, response));
+	return results;
+}
+
+export function pickRandom(images: Image[]): Image | null {
+	if (images.length === 0) {
+		return null;
+	}
+	return images[Math.floor(Math.random() * images.length)] ?? null;
+}
+
+export function findImage(images: Image[], rawId: string): Image | null {
 	// Mirrors Rails' to_i, which read the leading integer so "1.json" and "1-slug" found image 1.
 	const match = /^\d{1,15}/.exec(rawId);
 	if (!match) {
 		return null;
 	}
-	return db.prepare('SELECT id, url FROM images WHERE id = ?').bind(Number(match[0])).first<Image>();
+	const id = Number(match[0]);
+	return images.find((image) => image.id === id) ?? null;
 }
 
-export async function countImages(db: D1Database): Promise<number> {
-	const row = await db.prepare('SELECT COUNT(*) AS total FROM images').first<{ total: number }>();
-	return row?.total ?? 0;
-}
-
-export async function listImageIds(db: D1Database): Promise<number[]> {
-	const { results } = await db.prepare('SELECT id FROM images ORDER BY id').all<{ id: number }>();
-	return results.map((row) => row.id);
-}
-
-export async function insertImage(db: D1Database, url: string): Promise<number> {
-	const row = await db.prepare('INSERT INTO images (url) VALUES (?) RETURNING id').bind(url).first<{ id: number }>();
+export async function insertImage(c: AppContext, url: string): Promise<number> {
+	const row = await c.env.DB.prepare('INSERT INTO images (url) VALUES (?) RETURNING id').bind(url).first<{ id: number }>();
 	if (!row) {
 		throw new Error('insert returned no row');
 	}
+	// Other data centers pick up the new image when their copy expires.
+	await cache().delete(cacheKey(c));
 	return row.id;
 }

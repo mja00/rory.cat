@@ -1,6 +1,6 @@
 import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
-import { getImageById, getRandomImage, insertImage } from './db';
+import { findImage, insertImage, listImages, pickRandom } from './db';
 
 const NAME_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 const IMAGE_HOST = 'https://i.rory.cat';
@@ -14,11 +14,11 @@ api.use('/purr.json', cors());
 
 // Rails accepted an optional .json format suffix, so existing API clients may still call /purr.json.
 api.on('GET', ['/purr', '/purr.json'], async (c) => {
-	return c.json(await getRandomImage(c.env.DB));
+	return c.json(pickRandom(await listImages(c)));
 });
 
 api.get('/purr/:id', async (c) => {
-	const image = await getImageById(c.env.DB, c.req.param('id'));
+	const image = findImage(await listImages(c), c.req.param('id'));
 	if (!image) {
 		return c.json({ error: 'this rory does not exist' }, 404);
 	}
@@ -56,7 +56,7 @@ api.post('/new', async (c) => {
 	}
 
 	const url = `${IMAGE_HOST}/${name}`;
-	const id = await insertImage(c.env.DB, url);
+	const id = await insertImage(c, url);
 	return c.json({ success: true, url, id });
 });
 

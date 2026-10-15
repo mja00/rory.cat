@@ -1,3 +1,4 @@
+import { createExecutionContext, waitOnExecutionContext } from 'cloudflare:test';
 import { env } from 'cloudflare:workers';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import app from '../src/worker/index';
@@ -8,8 +9,11 @@ const SEEDED = [
 	{ id: 3, url: 'https://i.rory.cat/x.png?q="></script><script>alert(1)</script>' },
 ];
 
-function request(path: string, init?: RequestInit): Promise<Response> {
-	return Promise.resolve(app.request(path, init, env));
+async function request(path: string, init?: RequestInit): Promise<Response> {
+	const ctx = createExecutionContext();
+	const response = await app.request(path, init, env, ctx);
+	await waitOnExecutionContext(ctx);
+	return response;
 }
 
 function postNew(body: unknown, headers: Record<string, string> = { Authorization: 'test-key' }): Promise<Response> {
@@ -120,6 +124,18 @@ describe('POST /new', () => {
 		expect(response.status).toBe(200);
 		const body = await response.json<{ url: string }>();
 		expect(body.url).toMatch(/^https:\/\/i\.rory\.cat\/[a-zA-Z0-9]{10}$/);
+	});
+});
+
+describe('image cache', () => {
+	it('serves the cached list until an upload refreshes it', async () => {
+		await request('/sitemap.xml');
+		await env.DB.prepare('INSERT INTO images (id, url) VALUES (500, ?)').bind('https://i.rory.cat/sneaky.jpg').run();
+		expect((await request('/purr/500')).status).toBe(404);
+
+		vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('img'));
+		await postNew({ rory: 'https://example.com/fresh.jpg' });
+		expect((await request('/purr/500')).status).toBe(200);
 	});
 });
 
