@@ -57,7 +57,7 @@ In `npm run dev` the HTML links Vite's dev scripts (`/@vite/client`, `/src/clien
 | GET | `/purr/:id` | Image by id as JSON. |
 | POST | `/new` | Upload a new Rory (requires the API key). |
 
-Trailing slashes are ignored, and ids are read like Rails' `to_i`, so `/id/5/`, `/purr/5.json` and `/id/5-anything` all resolve to image 5. Add `?locale=ru` to any page for Russian, or `?locale=ca` for Catalan.
+Trailing slashes are ignored, and ids are read like Rails' `to_i`, so `/id/5/`, `/purr/5.json` and `/id/5-anything` all resolve to image 5. Add `?locale=<code>` to any page to change the language. Supported codes: `en` (default), `zh`, `hi`, `es`, `ar`, `fr`, `bn`, `pt`, `ru`, `id` and `ca`.
 
 ## API
 
@@ -128,7 +128,7 @@ src/
     main.ts       Hydration entry, PWA install button, service worker registration
     style.css
   shared/
-    i18n.ts       en, ru and ca messages, t() helper
+    i18n.ts       Messages for every locale, t() helper
     types.ts
 public/           Static assets served as-is
 migrations/       D1 schema
@@ -189,7 +189,7 @@ npm run preview
 npm test
 ```
 
-Tests live in `test/worker.test.ts` and run inside `workerd` through `@cloudflare/vitest-plugin`, using real local D1 and R2 bindings. Migrations are applied before the tests run, and outbound fetches for `/new` are mocked. They cover the API contract (CORS, response shapes, 404s, auth, bad input, successful upload), the sitemap, page meta tags, 404 pages, `.json` suffixes, trailing slashes and the Russian and Catalan locales.
+Tests live in `test/worker.test.ts` and run inside `workerd` through `@cloudflare/vitest-plugin`, using real local D1 and R2 bindings. Migrations are applied before the tests run, and outbound fetches for `/new` are mocked. They cover the API contract (CORS, response shapes, 404s, auth, bad input, successful upload), the sitemap, page meta tags, 404 pages, `.json` suffixes, trailing slashes, translations, locale fallback and right-to-left rendering.
 
 The run may print `Missing required secrets: API_KEY`. That warning is harmless because the test config sets the key.
 
@@ -276,7 +276,7 @@ Logs are available in the Cloudflare dashboard (observability is enabled) or liv
 
 ## Translations
 
-Messages live in `src/shared/i18n.ts`. English is the default and every key must exist there. Other locales are partial, and missing keys fall back to English. To add a locale, add a messages object and include it in `messages`. `resolveLocale` accepts any code listed there.
+Messages live in `src/shared/i18n.ts`. English is the default and every key must exist there. Other locales are partial, and missing keys fall back to English. To add a locale, add a messages object and include it in `messages`. `resolveLocale` accepts any code listed there. Right-to-left languages also go in `RTL_LOCALES` so the page gets `dir="rtl"`.
 
 ## License
 

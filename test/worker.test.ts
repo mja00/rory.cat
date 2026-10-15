@@ -178,7 +178,7 @@ describe('pages', () => {
 
 	it('translates to catalan and sets the html lang', async () => {
 		const html = await (await request('/id/1?locale=ca')).text();
-		expect(html).toContain('<html lang="ca">');
+		expect(html).toContain('<html lang="ca" dir="ltr">');
 		expect(html).toContain('Rory per ID');
 		expect(html).toContain('ID del Rory: 1');
 		expect(html).toContain('Sobre el Rory');
@@ -186,7 +186,13 @@ describe('pages', () => {
 
 	it('falls back to english for unknown locales', async () => {
 		const html = await (await request('/id/1?locale=toString')).text();
-		expect(html).toContain('<html lang="en">');
+		expect(html).toContain('<html lang="en" dir="ltr">');
 		expect(html).toContain('Rory By ID');
+	});
+
+	it('renders arabic right to left', async () => {
+		const html = await (await request('/id/1?locale=ar')).text();
+		expect(html).toContain('<html lang="ar" dir="rtl">');
+		expect(html).toContain('روري حسب المعرّف');
 	});
 });

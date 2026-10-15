@@ -1,5 +1,6 @@
 import { renderToString } from 'vue/server-renderer';
 import { createApp } from '../app/createApp';
+import { textDirection } from '../shared/i18n';
 import type { AppState } from '../shared/types';
 
 const APPLE_ICON_SIZES = [57, 60, 72, 76, 114, 144, 152, 180];
@@ -54,7 +55,7 @@ export async function renderPage(state: AppState, requestUrl: string): Promise<s
 	}
 
 	return `<!DOCTYPE html>
-<html lang="${state.locale}">
+<html lang="${state.locale}" dir="${textDirection(state.locale)}">
 <head>
 	<title>rory the cat</title>
 	<meta charset="utf-8">
