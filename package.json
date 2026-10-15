@@ -14,8 +14,8 @@
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
     "cf-typegen": "wrangler types",
-    "db:migrate:local": "wrangler d1 migrations apply rorycat --local",
-    "db:migrate:remote": "wrangler d1 migrations apply rorycat --remote"
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote"
   },
   "dependencies": {
     "hono": "4.13.12",

@@ -1,7 +1,8 @@
 {
 	"$schema": "./node_modules/wrangler/config-schema.json",
 	"name": "rorycat",
-	"main": "./src/worker/index.ts",
+	"account_id": "06dda5bc27efb27f3f90ef5da16034b8",
+	"main":"./src/worker/index.ts",
 	"compatibility_date": "2026-09-30",
 	"observability": {
 		"enabled": true
@@ -13,8 +14,8 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "rorycat",
-			"database_id": "REPLACE_WITH_D1_DATABASE_ID",
+			"database_name": "rory",
+			"database_id": "70943409-4d0b-479d-a9af-edd71a5783d6",
 			"migrations_dir": "migrations"
 		}
 	],
