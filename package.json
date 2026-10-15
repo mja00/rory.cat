@@ -1,0 +1,40 @@
+{
+  "name": "rorycat",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "npm run build && vite preview",
+    "deploy": "npm run build && wrangler deploy",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest run",
+    "cf-typegen": "wrangler types",
+    "db:migrate:local": "wrangler d1 migrations apply rorycat --local",
+    "db:migrate:remote": "wrangler d1 migrations apply rorycat --remote"
+  },
+  "dependencies": {
+    "hono": "4.13.12",
+    "vue": "3.5.43"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.62.3",
+    "@cloudflare/vitest-plugin": "1.3.4",
+    "@eslint/js": "10.0.1",
+    "@types/node": "24.19.0",
+    "@vitejs/plugin-vue": "6.0.9",
+    "eslint": "10.11.0",
+    "eslint-plugin-vue": "10.11.1",
+    "globals": "17.12.0",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0",
+    "vite": "8.3.1",
+    "vitest": "4.1.11",
+    "vue-eslint-parser": "10.4.1",
+    "vue-tsc": "3.3.11",
+    "wrangler": "4.145.0"
+  }
+}

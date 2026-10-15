@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.wrangler/
+.dev.vars*
+!.dev.vars.example
+.env*
+
+# MySQL exports and generated D1 import SQL
+*.tsv
+images-import.sql
+
+*.log
+.DS_Store
+.idea/
+.vscode/

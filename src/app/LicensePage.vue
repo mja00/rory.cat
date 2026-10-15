@@ -1,0 +1,20 @@
+<template>
+	<h1>Rory.cat Image Licenses</h1>
+
+	<p>Olivia Bednar, the copyright holder of the images on this website, hereby publishes them under the following license:</p>
+	<p>This file is licensed under the Creative Commons <a href="https://creativecommons.org/licenses/by/4.0/deed.en">Attribution 4.0 International</a> license.</p>
+	<p>You are free:</p>
+	<ul>
+		<li><b>to share</b> – to copy, distribute and transmit the work</li>
+		<li><b>to remix</b> – to adapt the work</li>
+	</ul>
+
+	<p>Under the following conditions:</p>
+	<ul>
+		<li>
+			<b>attribution</b> – You must give appropriate credit (by linking to the rory.cat URL), provide a link to the license, and indicate if changes were made.
+			You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.
+			<b>Just linking to the Rory.cat ID page is fine enough attribution. (This license appears on every rory.cat page)</b>
+		</li>
+	</ul>
+</template>

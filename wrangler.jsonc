@@ -1,0 +1,33 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "rorycat",
+	"main": "./src/worker/index.ts",
+	"compatibility_date": "2026-09-30",
+	"observability": {
+		"enabled": true
+	},
+	// Static files in public/ and the client build are served before the Worker runs; anything else (including "/") falls through to it.
+	"assets": {
+		"not_found_handling": "none"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "rorycat",
+			"database_id": "REPLACE_WITH_D1_DATABASE_ID",
+			"migrations_dir": "migrations"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "BUCKET",
+			"bucket_name": "rorycat"
+		}
+	],
+	// Set with `wrangler secret put API_KEY`, or .dev.vars locally.
+	"secrets": {
+		"required": ["API_KEY"]
+	}
+	// Uncomment to serve on the apex domain once the zone is on this account:
+	// "routes": [{ "pattern": "rory.cat", "custom_domain": true }]
+}
