@@ -182,6 +182,28 @@ describe('pages', () => {
 		expect(html).toContain('<title>rory the cat</title>');
 		expect(html).toContain('this rory does not exist');
 		expect(html).not.toContain('og:image"');
+		expect(html).not.toContain('discord:component-embed');
+	});
+
+	it('renders a discord component embed linking back to the rory', async () => {
+		const html = await (await request('/id/3?locale=ca')).text();
+		const payload = /<script id="discord:component-embed" type="application\/json">(.*?)<\/script>/.exec(html)?.[1];
+		expect(payload).toBeDefined();
+		expect(payload).not.toContain('</script>');
+		expect(new TextEncoder().encode(payload!).byteLength).toBeLessThanOrEqual(3000);
+		const { component } = JSON.parse(payload!);
+		expect(component.type).toBe(17);
+		expect(component.components).toEqual([
+			{ type: 10, content: '# [rory the cat!](http://localhost/id/3)\nID del Rory: 3' },
+			{ type: 12, items: [{ media: { url: SEEDED[2]!.url }, description: 'a picture of rory the cat' }] },
+			{
+				type: 1,
+				components: [
+					{ type: 2, style: 5, url: 'http://localhost/', label: 'Rory aleatori' },
+					{ type: 2, style: 5, url: 'https://chew.wiki/view/Rory', label: 'Sobre el Rory' },
+				],
+			},
+		]);
 	});
 
 	it('translates to russian and falls back to english for missing keys', async () => {

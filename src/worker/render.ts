@@ -1,9 +1,13 @@
 import { renderToString } from 'vue/server-renderer';
 import { createApp } from '../app/createApp';
-import { textDirection } from '../shared/i18n';
-import type { AppState } from '../shared/types';
+import { t, textDirection } from '../shared/i18n';
+import type { AppState, Image } from '../shared/types';
 
 const APPLE_ICON_SIZES = [57, 60, 72, 76, 114, 144, 152, 180];
+
+const ACCENT_COLOR = 0xd1ae86;
+// Discord drops component embeds over this size, counting escape sequences at full length.
+const COMPONENT_EMBED_MAX_BYTES = 3000;
 
 // Production client files have fixed names (see vite.config.ts) so the Worker can link them without the client manifest, which is built after the Worker.
 const CLIENT_ASSETS = import.meta.env.DEV
@@ -29,8 +33,8 @@ export function escapeHtml(value: string): string {
 }
 
 // Escaping < stops "</script>" or "<!--" in data from ending the script element early; JSON.parse reads < back as <.
-export function serializeState(state: AppState): string {
-	return JSON.stringify(state).replace(/</g, '\\u003c');
+export function serializeJson(value: unknown): string {
+	return JSON.stringify(value).replace(/</g, '\\u003c');
 }
 
 function imageMeta(url: string): string {
@@ -42,6 +46,37 @@ function imageMeta(url: string): string {
 	].join('\n\t');
 }
 
+// Discord renders this instead of the Open Graph card; the og tags stay as its fallback when the payload is rejected.
+function componentEmbed(state: AppState, image: Image, origin: string): string {
+	const payload = serializeJson({
+		component: {
+			type: 17,
+			accent_color: ACCENT_COLOR,
+			components: [
+				{
+					type: 10,
+					content: `# [rory the cat!](${origin}/id/${image.id})\n${t(state.locale, 'rory_id', { id: image.id })}`,
+				},
+				{
+					type: 12,
+					items: [{ media: { url: image.url }, description: 'a picture of rory the cat' }],
+				},
+				{
+					type: 1,
+					components: [
+						{ type: 2, style: 5, url: `${origin}/`, label: t(state.locale, 'random_rory') },
+						{ type: 2, style: 5, url: 'https://chew.wiki/view/Rory', label: t(state.locale, 'about') },
+					],
+				},
+			],
+		},
+	});
+	if (new TextEncoder().encode(payload).byteLength > COMPONENT_EMBED_MAX_BYTES) {
+		return '';
+	}
+	return `<script id="discord:component-embed" type="application/json">${payload}</script>`;
+}
+
 export async function renderPage(state: AppState, requestUrl: string): Promise<string> {
 	const appHtml = await renderToString(createApp(state));
 	const appleIcons = APPLE_ICON_SIZES
@@ -51,7 +86,7 @@ export async function renderPage(state: AppState, requestUrl: string): Promise<s
 	const scripts = CLIENT_ASSETS.scripts.map((src) => `<script type="module" src="${src}"></script>`).join('\n');
 	let extraMeta = '';
 	if (state.image) {
-		extraMeta = imageMeta(state.image.url);
+		extraMeta = [imageMeta(state.image.url), componentEmbed(state, state.image, new URL(requestUrl).origin)].join('\n\t');
 	}
 
 	return `<!DOCTYPE html>
@@ -87,7 +122,7 @@ export async function renderPage(state: AppState, requestUrl: string): Promise<s
 </head>
 <body>
 <div id="app" class="container">${appHtml}</div>
-<script type="application/json" id="app-state">${serializeState(state)}</script>
+<script type="application/json" id="app-state">${serializeJson(state)}</script>
 ${scripts}
 </body>
 </html>
